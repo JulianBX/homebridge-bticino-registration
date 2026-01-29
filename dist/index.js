@@ -108,12 +108,15 @@ class BTicinoRegistrationPlatform {
         }
         else {
             this.log.info('Neues Doorbell Accessory erstellen');
-            this.doorbellAccessory = new this.api.platformAccessory('BTicino Doorbell', uuid);
+            // VIDEO_DOORBELL Category (18) damit HomeKit es als echte Klingel erkennt
+            this.doorbellAccessory = new this.api.platformAccessory('BTicino Doorbell', uuid, 18 /* this.api.hap.Categories.VIDEO_DOORBELL */);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.doorbellAccessory]);
         }
         // Doorbell Service hinzufügen/abrufen
         this.doorbellService = this.doorbellAccessory.getService(this.Service.Doorbell) ||
             this.doorbellAccessory.addService(this.Service.Doorbell, 'BTicino Doorbell');
+        // Als Primary Service markieren - wichtig für HomeKit Erkennung
+        this.doorbellService.setPrimaryService(true);
         // Programmable Switch Event Characteristic
         this.doorbellService.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent)
             .onGet(() => null);
