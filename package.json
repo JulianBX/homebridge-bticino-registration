@@ -1,6 +1,6 @@
 {
   "name": "homebridge-bticino-registration",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "BTicino Doorbell Integration mit Webhook-Server und Endpoint-Registrierung",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "doorbell",
     "intercom"
   ],
-  "author": "Your Name",
+  "author": "Julian Besken",
   "license": "MIT",
   "engines": {
     "homebridge": ">=1.6.0",
