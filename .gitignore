@@ -23,6 +23,3 @@ npm-debug.log*
 
 # Homebridge
 homebridge/
-
-# Build artifacts
-dist/
