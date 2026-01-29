@@ -1,7 +1,7 @@
 {
   "name": "homebridge-bticino-registration",
-  "version": "1.0.0",
-  "description": "Registriert Webhook-Endpoints beim BTicino c300x-controller",
+  "version": "2.0.0",
+  "description": "BTicino Doorbell Integration mit Webhook-Server und Endpoint-Registrierung",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -12,7 +12,8 @@
     "homebridge",
     "bticino",
     "c300x",
-    "doorbell"
+    "doorbell",
+    "intercom"
   ],
   "author": "Your Name",
   "license": "MIT",
@@ -20,9 +21,10 @@
     "homebridge": ">=1.6.0",
     "node": ">=18.0.0"
   },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.10.0",
     "homebridge": "^1.7.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.3.0"
   }
 }

@@ -1,52 +1,49 @@
-# homebridge-bticino-registration
+# homebridge-bticino-registration v2.0
 
-Homebridge-Plugin zur automatischen Registrierung von Webhook-Endpoints beim BTicino c300x-controller.
+Komplette BTicino Doorbell Integration für Homebridge mit:
+
+- ✅ **Doorbell-Accessory** direkt in HomeKit
+- ✅ **HTTP-Server** für Webhook-Empfang
+- ✅ **Automatische Endpoint-Registrierung** beim BTicino
 
 ## Features
 
-- ✅ Automatische Endpoint-Registrierung beim Homebridge-Start
-- ✅ Regelmäßige Erneuerung (Standard: alle 4 Minuten)
-- ✅ Keine HomeKit-Automationen nötig
-- ✅ Konfigurierbar über Homebridge config.json
-- ✅ Sauberes Cleanup beim Herunterfahren
+### Doorbell-Events
+Wenn jemand klingelt, sendet der BTicino c300x-controller einen Webhook an dieses Plugin.
+Das Plugin triggert dann ein HomeKit Doorbell-Event → Benachrichtigung auf allen Apple-Geräten.
+
+### HTTP-Server Endpoints
+
+| Endpoint | Beschreibung |
+|----------|-------------|
+| `/doorbell` | Triggert Doorbell-Event in HomeKit |
+| `/locked` | Loggt "Tür verriegelt" |
+| `/unlocked` | Loggt "Tür entriegelt" |
+| `/status` | Zeigt Plugin-Status |
+
+### Automatische Registrierung
+Das Plugin registriert die Webhook-URLs automatisch beim BTicino (alle 4 Minuten).
 
 ## Installation
-
-### Option 1: Lokal installieren
 
 ```bash
 cd /path/to/homebridge-bticino-registration
 npm install
 npm run build
 npm link
-
-cd ~/.homebridge  # oder euer Homebridge-Verzeichnis
-npm link homebridge-bticino-registration
 ```
-
-### Option 2: Direkt aus Ordner
-
-```bash
-cd /path/to/homebridge-bticino-registration
-npm install
-npm run build
-```
-
-In der Homebridge config.json den Plugin-Pfad angeben (siehe unten).
 
 ## Konfiguration
-
-Fügt diese Platform zu eurer `config.json` hinzu:
 
 ```json
 {
     "platforms": [
         {
             "platform": "BTicinoRegistration",
-            "name": "BTicino Endpoint Registration",
+            "name": "BTicino Doorbell",
             "bticinoIP": "192.168.178.65",
             "homebridgeIP": "192.168.178.157",
-            "webhookPort": 8081,
+            "webhookPort": 8282,
             "interval": 4,
             "identifier": "homebridge"
         }
@@ -54,61 +51,86 @@ Fügt diese Platform zu eurer `config.json` hinzu:
 }
 ```
 
-### Konfigurationsoptionen
+### Optionen
 
 | Option | Erforderlich | Standard | Beschreibung |
 |--------|-------------|----------|--------------|
 | `platform` | ✅ | - | Muss `BTicinoRegistration` sein |
 | `name` | ✅ | - | Name für Logs |
 | `bticinoIP` | ✅ | - | IP-Adresse des BTicino Intercoms |
-| `homebridgeIP` | ✅ | - | IP-Adresse eures Homebridge-Servers |
-| `webhookPort` | ❌ | `8081` | Port des HTTP-Servers von homebridge-camera-ffmpeg |
+| `homebridgeIP` | ✅ | - | IP-Adresse des Homebridge-Servers |
+| `webhookPort` | ❌ | `8282` | Port für den Webhook-Server |
 | `interval` | ❌ | `4` | Registrierungs-Intervall in Minuten |
 | `identifier` | ❌ | `homebridge` | Identifier für die Registrierung |
 
-## Wie es funktioniert
+## Kombination mit homebridge-camera-ffmpeg
 
-1. **Beim Start:** Das Plugin registriert sofort die Webhook-URLs beim BTicino c300x-controller
-2. **Alle X Minuten:** Die Registrierung wird erneuert (Standard: 4 Minuten)
-3. **Beim Shutdown:** Das Interval wird sauber gestoppt
+Dieses Plugin stellt nur das **Doorbell-Accessory** und die **Webhook-Verarbeitung** bereit.
 
-Die c300x-controller Firmware löscht Endpoints nach 5 Minuten automatisch, daher die regelmäßige Erneuerung.
+Für **Video-Streaming** braucht ihr zusätzlich `homebridge-camera-ffmpeg`:
 
-## Registrierte Endpoints
+```json
+{
+    "platforms": [
+        {
+            "platform": "BTicinoRegistration",
+            "name": "BTicino Doorbell",
+            "bticinoIP": "192.168.178.65",
+            "homebridgeIP": "192.168.178.157",
+            "webhookPort": 8282
+        },
+        {
+            "platform": "Camera-ffmpeg",
+            "name": "Camera FFmpeg",
+            "cameras": [
+                {
+                    "name": "BTicino Doorbell",
+                    "videoConfig": {
+                        "source": "-rtsp_transport tcp -i rtsp://192.168.178.65:6554/doorbell",
+                        ...
+                    }
+                }
+            ]
+        }
+    ]
+}
+```
 
-Das Plugin registriert drei Webhook-URLs:
-
-| Event | URL |
-|-------|-----|
-| Doorbell Pressed | `http://{homebridgeIP}:{webhookPort}/doorbell?deviceName=BTicino%20Doorbell` |
-| Door Locked | `http://{homebridgeIP}:{webhookPort}/locked` |
-| Door Unlocked | `http://{homebridgeIP}:{webhookPort}/unlocked` |
-
-Diese URLs werden von `homebridge-camera-ffmpeg` (mit `porthttp` aktiviert) empfangen.
+**Hinweis:** Der Kamera-Name muss mit dem Doorbell-Accessory übereinstimmen damit HomeKit sie verknüpft.
 
 ## Logs
 
-Nach dem Start solltet ihr in den Homebridge-Logs folgendes sehen:
-
 ```
-[BTicino Endpoint Registration] BTicino Registration Plugin initialisiert
-[BTicino Endpoint Registration] BTicino IP: 192.168.178.65
-[BTicino Endpoint Registration] Homebridge IP: 192.168.178.157
-[BTicino Endpoint Registration] Webhook Port: 8081
-[BTicino Endpoint Registration] Registrierungs-Intervall: 4 Minuten
-[BTicino Endpoint Registration] Homebridge fertig geladen, starte Endpoint-Registrierung...
-[BTicino Endpoint Registration] ✓ Endpoints erfolgreich registriert bei 192.168.178.65
+[BTicino Doorbell] BTicino Registration Plugin initialisiert
+[BTicino Doorbell] BTicino IP: 192.168.178.65
+[BTicino Doorbell] Webhook Port: 8282
+[BTicino Doorbell] ✓ Doorbell Accessory bereit
+[BTicino Doorbell] ✓ HTTP-Server gestartet auf Port 8282
+[BTicino Doorbell] ✓ Endpoints registriert bei 192.168.178.65
+[BTicino Doorbell] 🔔 DOORBELL PRESSED - Klingel wurde gedrückt!
+[BTicino Doorbell] ✓ HomeKit Doorbell-Event gesendet
+```
+
+## Test
+
+```bash
+# Doorbell manuell testen
+curl http://192.168.178.157:8282/doorbell
+
+# Status prüfen
+curl http://192.168.178.157:8282/status
 ```
 
 ## Troubleshooting
 
-### "Registrierung fehlgeschlagen"
-- Ist der BTicino erreichbar? `ping 192.168.178.65`
-- Läuft der c300x-controller? Prüft `http://192.168.178.65:8080/`
+### Keine Doorbell-Benachrichtigungen
+- Port 8282 auf QNAP offen? (Firewall)
+- Endpoints registriert? Prüfe `http://192.168.178.65:8080/register-endpoint`
+- Plugin-Logs prüfen
 
-### Keine Doorbell-Events in HomeKit
-- Ist `porthttp: 8081` in der camera-ffmpeg Config gesetzt?
-- Firewall auf QNAP prüfen (Port 8081 muss offen sein)
+### Endpoints werden nicht registriert
+- BTicino erreichbar? `ping 192.168.178.65`
+- c300x-controller läuft? `http://192.168.178.65:8080/`
 
 ## Lizenz
 
